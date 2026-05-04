@@ -1,0 +1,43 @@
+# payment-service
+#spring:
+#  application:
+#    name: payment-service
+#  kafka:
+#    bootstrap-servers: localhost:9092
+#    consumer:
+#      group-id: payment-group
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#server:
+#  port: 8082
+
+
+spring:
+  application:
+    name: payment-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: payment-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: manual_immediate
+      type: batch
+
+  data:
+    mongodb:
+      uri: mongodb://admin:admin123@localhost:27017/payment_db?authSource=admin
+
+server:
+  port: 8082
+
+logging:
+  level:
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
+
+# inventory-service  → group-id: inventory-group, port: 8083
+# notification-service → group-id: notification-group, port: 8084

@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: Order_Service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+#    consumer:
+#      auto-offset-reset: earliest
+
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: order_db
+      username: admin
+      password: admin123
+      authentication-database: admin
+
+server:
+  port: 8081

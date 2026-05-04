@@ -1,0 +1,16 @@
+# payment-service
+spring:
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: payment-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+server:
+  port: 8084
+
+# inventory-service  → group-id: inventory-group, port: 8083
+# notification-service → group-id: notification-group, port: 8084

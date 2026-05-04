@@ -1,0 +1,3 @@
+com/example/common/enums/EventType.class
+com/example/common/constants/KafkaTopics.class
+com/example/common/dto/OrderEvent.class

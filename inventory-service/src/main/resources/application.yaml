@@ -1,0 +1,23 @@
+# payment-service
+spring:
+  application:
+    name: inventory-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: payment-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+
+  data:
+    mongodb:
+      uri: mongodb://admin:admin123@localhost:27017/inventory_db?authSource=admin
+
+
+server:
+  port: 8083
+
+# inventory-service  → group-id: inventory-group, port: 8083
+# notification-service → group-id: notification-group, port: 8084
