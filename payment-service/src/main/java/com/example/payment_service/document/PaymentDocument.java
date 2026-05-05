@@ -15,7 +15,7 @@ public class PaymentDocument {
     private String id;
 
     private String orderId;
-    private BigDecimal amount;
+    private BigDecimal totalAmount;
     private EventType status;
 
 

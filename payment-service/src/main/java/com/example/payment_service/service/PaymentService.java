@@ -34,16 +34,20 @@ public class PaymentService {
             amount = orderEvent.getAmount();
             quantity = orderEvent.getQuantity();
 
+            // total amount calculation
+            totalAmount = amount.multiply(BigDecimal.valueOf(quantity));
+
             PaymentDocument paymentDocument = new PaymentDocument();
 
+            // save to mongoDB
             paymentDocument.setOrderId(orderEvent.getOrderId());
-            paymentDocument.setAmount(orderEvent.getAmount());
+            paymentDocument.setTotalAmount(totalAmount);
             paymentDocument.setStatus(EventType.ORDER_CREATED);
 
             paymentRepo.save(paymentDocument);
             log.info("Payment saved to MongoDB for order: {}", orderEvent.getOrderId());
 
-            return totalAmount = amount.multiply(BigDecimal.valueOf(quantity));
+
 
         }
         catch (Exception e){

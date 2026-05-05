@@ -55,8 +55,6 @@ public class PaymentEventConsumer {
                 log.info("[PAYMENT] Event type is not ORDER_CREATED, skipping. Event type: {}", orderEvent.getEventType());
             }
 
-
-
         } catch (Exception e){
             log.error("[PAYMENT] Error processing message: {}", message, e);
             e.printStackTrace();
