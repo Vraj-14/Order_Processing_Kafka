@@ -47,8 +47,6 @@ public class PaymentService {
             paymentRepo.save(paymentDocument);
             log.info("Payment saved to MongoDB for order: {}", orderEvent.getOrderId());
 
-
-
         }
         catch (Exception e){
             log.info("Exception occurred in payment service");

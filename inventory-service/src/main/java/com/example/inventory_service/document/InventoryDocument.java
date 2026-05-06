@@ -14,6 +14,7 @@ public class InventoryDocument {
     private String orderId;
     private String product;
     private Integer quantity;
+    private Integer remainingQuantity;
     private EventType status;      // RESERVED, RELEASED etc.
 
 
@@ -47,6 +48,14 @@ public class InventoryDocument {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public Integer getRemainingQuantity() {
+        return remainingQuantity;
+    }
+
+    public void setRemainingQuantity(Integer remainingQuantity) {
+        this.remainingQuantity = remainingQuantity;
     }
 
     public EventType getStatus() {

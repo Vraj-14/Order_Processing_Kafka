@@ -48,6 +48,7 @@ public class OrderService {
 
 
         // setting fields to main class from dto
+
         OrderEvent orderEvent = new OrderEvent();
 
         //set manually
