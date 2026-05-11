@@ -1,6 +1,7 @@
 package com.example.payment_service.consume;
 
 import com.example.common.constants.KafkaTopics;
+import com.example.common.dto.InventoryResultEvent;
 import com.example.common.dto.OrderEvent;
 import com.example.common.enums.EventType;
 import com.example.payment_service.service.PaymentService;
@@ -21,7 +22,6 @@ public class PaymentEventConsumer {
     @Autowired
     PaymentService paymentService;
 
-    private BigDecimal totalAmount;
 
     public PaymentEventConsumer(ObjectMapper objectMapper){
         this.objectMapper = objectMapper;
@@ -29,35 +29,22 @@ public class PaymentEventConsumer {
     }
 
     @KafkaListener(
-            topics = KafkaTopics.ORDER_EVENTS,
+            topics = KafkaTopics.INVENTORY_RESULT,
             groupId = "payment-group"
     )
     public void consume(String message){
-        log.info("[PAYMENT] Received message from Kafka: {}", message);
+        log.info("[PAYMENT] Received inventory result: {}", message);
 
         try {
             log.debug("[PAYMENT] Attempting to deserialize message");
 
-            OrderEvent orderEvent = objectMapper.readValue(message, OrderEvent.class);
+            InventoryResultEvent inventoryResultEvent = objectMapper.readValue(message, InventoryResultEvent.class);
 
-            log.info("[PAYMENT] Successfully deserialized OrderEvent with ID: {}", orderEvent.getEventId());
-
-            if (orderEvent.getEventType() == EventType.ORDER_CREATED){
-                log.info("[PAYMENT] Processing payment for order: {},quantity:{}, amount: {}",
-                        orderEvent.getOrderId(),
-                        orderEvent.getQuantity(),
-                        orderEvent.getAmount());
-
-                totalAmount = paymentService.processPayment(message);
-
-                log.info(String.valueOf(totalAmount));
-            } else {
-                log.info("[PAYMENT] Event type is not ORDER_CREATED, skipping. Event type: {}", orderEvent.getEventType());
-            }
+            paymentService.processPayment(inventoryResultEvent);
 
         } catch (Exception e){
-            log.error("[PAYMENT] Error processing message: {}", message, e);
-            e.printStackTrace();
+            log.error("[PAYMENT] Error processing inventory result: {}", message, e);
+
         }
 
 

@@ -1,11 +1,15 @@
 package com.example.inventory_service.service;
 
+import com.example.common.dto.InventoryResultEvent;
 import com.example.common.dto.OrderEvent;
 import com.example.common.enums.EventType;
+import com.example.common.enums.InventoryStatus;
 import com.example.inventory_service.document.InventoryDocument;
 import com.example.inventory_service.document.ProductStockDocument;
 import com.example.inventory_service.repository.InventoryRepository;
 import com.example.inventory_service.repository.ProductStockRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +32,7 @@ public class InventoryService {
     @Autowired
     ProductStockRepository productStockRepo;
 
-    public void processInventory(String message) {
+    public InventoryResultEvent processInventory(String message) {
 
         try {
 
@@ -37,45 +41,72 @@ public class InventoryService {
             // Look up current stock for this product
             ProductStockDocument stockDocument = productStockRepo
                     .findByProduct(orderEvent.getProduct())
-                    .orElseThrow( () -> new RuntimeException(
-                            "No stock record for product: " + orderEvent.getProduct()
-                            )
-                    );
+                    .orElse(null);
 
-            int available = stockDocument.getAvailableStock();
-            int ordered = orderEvent.getQuantity();
 
-            if (ordered > available){
-                log.warn("Insufficient stock for {}. Available: {}, Ordered: {}",
-                orderEvent.getProduct(), available, ordered);
+            // product dont exist
+            if (stockDocument == null) {
+                log.warn("[INVENTORY] No stock record for product: {}", orderEvent.getProduct());
 
-                return;
+                return new InventoryResultEvent(
+                        orderEvent.getOrderId(),
+                        orderEvent.getProduct(),
+                        orderEvent.getQuantity(),
+                        orderEvent.getAmount(),
+                        InventoryStatus.INVENTORY_FAILED,
+                        "Product Not Found : " + orderEvent.getProduct()
+                );
             }
 
-            // deduct and save back
-            Integer remainingQuantity = available - ordered;
-            stockDocument.setAvailableStock(remainingQuantity);    // update remainingStock in stock repo
-            productStockRepo.save(stockDocument);                  // save to stock repo
+            // insufficient quantity
+            if (orderEvent.getQuantity() > stockDocument.getAvailableStock()) {
+                log.warn("[INVENTORY] Insufficient stock. Available: {}, Ordered: {}",
+                        stockDocument.getAvailableStock(), orderEvent.getQuantity());
+
+                return new InventoryResultEvent(
+                        orderEvent.getOrderId(),
+                        orderEvent.getProduct(),
+                        orderEvent.getQuantity(),
+                        orderEvent.getAmount(),
+                        InventoryStatus.INVENTORY_FAILED,
+                        "Insufficient Stock : " + orderEvent.getQuantity()
+                );
+            }
+
+            // happy-path
+
+            // Deduct stock
+            stockDocument.setAvailableStock(stockDocument.getAvailableStock() - orderEvent.getQuantity());
+            // save to admin repo
+            productStockRepo.save(stockDocument);
+
+            // Save inventory record
+            InventoryDocument doc = new InventoryDocument();
+            doc.setOrderId(orderEvent.getOrderId());
+            doc.setProduct(orderEvent.getProduct());
+            doc.setQuantity(orderEvent.getQuantity());
+            doc.setRemainingQuantity(stockDocument.getAvailableStock());
+            doc.setStatus(EventType.ORDER_CREATED);
+            inventoryRepo.save(doc);
+
+            log.info("[INVENTORY] Reserved {} units of {} for order: {}",
+                    orderEvent.getQuantity(), orderEvent.getProduct(), orderEvent.getOrderId());
 
 
-            // save to main repo
-            InventoryDocument inventoryDocument = new InventoryDocument();
+            return new InventoryResultEvent(
+                    orderEvent.getOrderId(),
+                    orderEvent.getProduct(),
+                    orderEvent.getQuantity(),
+                    orderEvent.getAmount(),
+                    InventoryStatus.INVENTORY_RESERVED,
+                    "OK"
+            );
 
-            inventoryDocument.setOrderId(orderEvent.getOrderId());
-            inventoryDocument.setProduct(orderEvent.getProduct());
-            inventoryDocument.setQuantity(orderEvent.getQuantity());
-            inventoryDocument.setRemainingQuantity(remainingQuantity);
-            inventoryDocument.setStatus(EventType.ORDER_CREATED);
 
-            inventoryRepo.save(inventoryDocument);
+        } catch (Exception e) {
+            log.error("[INVENTORY] Exception in processInventory", e);
+            return null;
 
-            log.info("Inventory saved to MongoDB for order: {}", orderEvent.getOrderId());
-            log.info("Ordered Quantity : {}",orderEvent.getQuantity());
-            log.info("Remaining inventory stock : {}",remainingQuantity);
-
-        } catch (Exception e){
-            log.info("Exception in inventory service",e);
         }
-
     }
 }

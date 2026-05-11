@@ -1,7 +1,10 @@
 package com.example.payment_service.service;
 
+import com.example.common.dto.InventoryResultEvent;
 import com.example.common.dto.OrderEvent;
 import com.example.common.enums.EventType;
+import com.example.common.enums.InventoryStatus;
+import com.example.common.enums.PaymentStatus;
 import com.example.payment_service.document.PaymentDocument;
 import com.example.payment_service.repository.PaymentRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,31 +29,36 @@ public class PaymentService {
     @Autowired
     PaymentRepository paymentRepo;
 
-    public BigDecimal processPayment(String message) {
+    public void processPayment(InventoryResultEvent inventoryResultEvent) {
+
+        PaymentDocument paymentDocument = new PaymentDocument();
+        paymentDocument.setOrderId(inventoryResultEvent.getOrderId());
 
         try{
-            OrderEvent orderEvent = objectMapper.readValue(message, OrderEvent.class);
 
-            amount = orderEvent.getAmount();
-            quantity = orderEvent.getQuantity();
+            if (inventoryResultEvent.getStatus() == InventoryStatus.INVENTORY_RESERVED){
 
-            // total amount calculation
-            totalAmount = amount.multiply(BigDecimal.valueOf(quantity));
+                BigDecimal totalAmount = inventoryResultEvent.getAmount()
+                        .multiply(BigDecimal.valueOf(inventoryResultEvent.getQuantity()));
 
-            PaymentDocument paymentDocument = new PaymentDocument();
+                paymentDocument.setTotalAmount(totalAmount);
+                paymentDocument.setStatus(PaymentStatus.PAYMENT_SUCCESS);
 
-            // save to mongoDB
-            paymentDocument.setOrderId(orderEvent.getOrderId());
-            paymentDocument.setTotalAmount(totalAmount);
-            paymentDocument.setStatus(EventType.ORDER_CREATED);
+                log.info("[PAYMENT] Success for order: {} | Total: {}",
+                        inventoryResultEvent.getOrderId(),
+                        totalAmount);
+            } else {
+                paymentDocument.setTotalAmount(BigDecimal.ZERO);
+                paymentDocument.setStatus(PaymentStatus.PAYMENT_FAILED);
+                log.warn("[PAYMENT] Failed for order: {} | reason: {}",
+                        inventoryResultEvent.getOrderId(), inventoryResultEvent.getReason());
+            }
 
             paymentRepo.save(paymentDocument);
-            log.info("Payment saved to MongoDB for order: {}", orderEvent.getOrderId());
 
         }
         catch (Exception e){
             log.info("Exception occurred in payment service");
         }
-        return  totalAmount;
     }
 }
