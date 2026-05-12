@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 @Slf4j
 @AllArgsConstructor
@@ -52,7 +54,7 @@ public class InventoryService {
                         orderEvent.getOrderId(),
                         orderEvent.getProduct(),
                         orderEvent.getQuantity(),
-                        orderEvent.getAmount(),
+                        BigDecimal.ZERO,
                         InventoryStatus.INVENTORY_FAILED,
                         "Product Not Found : " + orderEvent.getProduct()
                 );
@@ -67,11 +69,13 @@ public class InventoryService {
                         orderEvent.getOrderId(),
                         orderEvent.getProduct(),
                         orderEvent.getQuantity(),
-                        orderEvent.getAmount(),
+                        BigDecimal.ZERO,
                         InventoryStatus.INVENTORY_FAILED,
                         "Insufficient Stock : " + orderEvent.getQuantity()
                 );
             }
+
+
 
             // happy-path
 
@@ -80,7 +84,7 @@ public class InventoryService {
             // save to admin repo
             productStockRepo.save(stockDocument);
 
-            // Save inventory record
+            // Save inventory record -> only if flow passes
             InventoryDocument doc = new InventoryDocument();
             doc.setOrderId(orderEvent.getOrderId());
             doc.setProduct(orderEvent.getProduct());
@@ -97,7 +101,7 @@ public class InventoryService {
                     orderEvent.getOrderId(),
                     orderEvent.getProduct(),
                     orderEvent.getQuantity(),
-                    orderEvent.getAmount(),
+                    stockDocument.getUnitPrice(),
                     InventoryStatus.INVENTORY_RESERVED,
                     "OK"
             );

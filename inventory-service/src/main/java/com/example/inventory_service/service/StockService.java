@@ -36,11 +36,13 @@ public class StockService {
                 log.info("Product: {} already found. Adding to existing entry",currentStockDocument.get().getProduct());
 
             }   else {
+                // if product not already available
 
                 newStockDocument.setProduct(addStockRequest.getProduct());
                 newStockDocument.setAvailableStock(addStockRequest.getQuantity());
+                newStockDocument.setUnitPrice(addStockRequest.getUnitPrice());
 
-                log.info("Adding {} as new entry", addStockRequest.getProduct());
+                log.info("Adding {} as new entry with unit price: {} ", addStockRequest.getProduct() ,addStockRequest.getUnitPrice());
             }
 
             productStockRepo.save(newStockDocument);
@@ -54,7 +56,9 @@ public class StockService {
         return "Stock Added : "
                 + addStockRequest.getProduct()
                 + " -> "
-                + addStockRequest.getQuantity();
+                + addStockRequest.getQuantity()
+                + " -> "
+                + addStockRequest.getUnitPrice();
 
     }
 

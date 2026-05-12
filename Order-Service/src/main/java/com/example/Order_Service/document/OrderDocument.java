@@ -1,9 +1,10 @@
 package com.example.Order_Service.document;
 
 import com.example.common.enums.EventType;
-import jdk.jfr.DataAmount;
+import com.example.common.enums.PaymentStatus;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.stereotype.Indexed;
 
 import java.math.BigDecimal;
 
@@ -17,8 +18,8 @@ public class OrderDocument {
     private String orderId;
     private String product;
     private int quantity;
-    private BigDecimal amount;
-    private EventType status;
+    private BigDecimal totalAmount;
+    private String status;
 
     public String getId() {
         return id;
@@ -52,19 +53,19 @@ public class OrderDocument {
         this.quantity = quantity;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
-    public EventType getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(EventType status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 }

@@ -16,7 +16,7 @@ public class InventoryResultEvent {
     private String orderId;
     private String product;
     private int quantity;
-    private BigDecimal amount;
+    private BigDecimal unitPrice;
     private InventoryStatus status;
     private String reason;
 }

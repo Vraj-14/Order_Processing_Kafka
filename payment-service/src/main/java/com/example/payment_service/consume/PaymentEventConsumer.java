@@ -3,7 +3,9 @@ package com.example.payment_service.consume;
 import com.example.common.constants.KafkaTopics;
 import com.example.common.dto.InventoryResultEvent;
 import com.example.common.dto.OrderEvent;
+import com.example.common.dto.PaymentResultEvent;
 import com.example.common.enums.EventType;
+import com.example.payment_service.producer.PaymentResultProducer;
 import com.example.payment_service.service.PaymentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,9 @@ public class PaymentEventConsumer {
 
     @Autowired
     PaymentService paymentService;
+
+    @Autowired
+    PaymentResultProducer paymentResultProducer;
 
 
     public PaymentEventConsumer(ObjectMapper objectMapper){
@@ -40,7 +45,9 @@ public class PaymentEventConsumer {
 
             InventoryResultEvent inventoryResultEvent = objectMapper.readValue(message, InventoryResultEvent.class);
 
-            paymentService.processPayment(inventoryResultEvent);
+            PaymentResultEvent paymentResultEvent = paymentService.processPayment(inventoryResultEvent);
+
+            paymentResultProducer.send(paymentResultEvent);
 
         } catch (Exception e){
             log.error("[PAYMENT] Error processing inventory result: {}", message, e);

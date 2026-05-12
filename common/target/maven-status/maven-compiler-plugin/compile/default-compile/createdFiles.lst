@@ -1,3 +1,7 @@
 com/example/common/enums/EventType.class
+com/example/common/dto/PaymentResultEvent.class
+com/example/common/dto/InventoryResultEvent.class
 com/example/common/constants/KafkaTopics.class
+com/example/common/enums/PaymentStatus.class
 com/example/common/dto/OrderEvent.class
+com/example/common/enums/InventoryStatus.class

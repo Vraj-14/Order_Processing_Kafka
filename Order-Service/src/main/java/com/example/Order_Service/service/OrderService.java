@@ -2,6 +2,7 @@ package com.example.Order_Service.service;
 
 import com.example.Order_Service.document.OrderDocument;
 import com.example.Order_Service.dto.CreateOrderRequest;
+import com.example.Order_Service.exception.DuplicateOrderException;
 import com.example.Order_Service.producer.OrderProducer;
 import com.example.Order_Service.repository.OrderRepository;
 import com.example.common.constants.KafkaTopics;
@@ -11,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -34,13 +35,25 @@ public class OrderService {
 
     public void publishOrder(CreateOrderRequest orderRequest) {
 
+        Optional<OrderDocument> existingOrder = orderRepo.findByOrderId(orderRequest.getOrderId());
+
+        if (existingOrder.isPresent()){
+
+            log.warn("[ORDER] Duplicate order detected with Order-ID: {} ",orderRequest.getOrderId());
+
+            throw new DuplicateOrderException(
+                    "Order already exist with ID: "
+                    + orderRequest.getOrderId()
+            );
+        }
+
         // saving ot mongo db
         OrderDocument orderDocument = new OrderDocument();
+
         orderDocument.setOrderId(orderRequest.getOrderId());
         orderDocument.setProduct(orderRequest.getProduct());
-        orderDocument.setAmount(orderRequest.getAmount());
         orderDocument.setQuantity(orderRequest.getQuantity());
-        orderDocument.setStatus(EventType.ORDER_CREATED);
+        orderDocument.setStatus("PROCESSING");
 
         orderRepo.save(orderDocument);
 
@@ -59,11 +72,17 @@ public class OrderService {
         orderEvent.setOrderId(orderRequest.getOrderId());
         orderEvent.setProduct(orderRequest.getProduct());
         orderEvent.setQuantity(orderRequest.getQuantity());
-        orderEvent.setAmount(orderRequest.getAmount());
 
         orderEvent.setSource(KafkaTopics.ORDER_EVENTS);
 
         producer.send(orderEvent);
+
+    }
+
+
+    public Optional<OrderDocument> getOrderStatus(String orderId){
+
+        return orderRepo.findByOrderId(orderId);
 
     }
 }

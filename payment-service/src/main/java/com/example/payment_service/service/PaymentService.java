@@ -2,6 +2,7 @@ package com.example.payment_service.service;
 
 import com.example.common.dto.InventoryResultEvent;
 import com.example.common.dto.OrderEvent;
+import com.example.common.dto.PaymentResultEvent;
 import com.example.common.enums.EventType;
 import com.example.common.enums.InventoryStatus;
 import com.example.common.enums.PaymentStatus;
@@ -22,14 +23,11 @@ public class PaymentService {
 
     private final ObjectMapper objectMapper;
 
-    BigDecimal amount;
-    int quantity;
-    BigDecimal totalAmount;
 
     @Autowired
     PaymentRepository paymentRepo;
 
-    public void processPayment(InventoryResultEvent inventoryResultEvent) {
+    public PaymentResultEvent processPayment(InventoryResultEvent inventoryResultEvent) {
 
         PaymentDocument paymentDocument = new PaymentDocument();
         paymentDocument.setOrderId(inventoryResultEvent.getOrderId());
@@ -38,27 +36,46 @@ public class PaymentService {
 
             if (inventoryResultEvent.getStatus() == InventoryStatus.INVENTORY_RESERVED){
 
-                BigDecimal totalAmount = inventoryResultEvent.getAmount()
+                BigDecimal totalAmount = inventoryResultEvent.getUnitPrice()
                         .multiply(BigDecimal.valueOf(inventoryResultEvent.getQuantity()));
 
                 paymentDocument.setTotalAmount(totalAmount);
                 paymentDocument.setStatus(PaymentStatus.PAYMENT_SUCCESS);
 
+                paymentRepo.save(paymentDocument);
+
                 log.info("[PAYMENT] Success for order: {} | Total: {}",
                         inventoryResultEvent.getOrderId(),
                         totalAmount);
+
+                return new PaymentResultEvent(
+                        inventoryResultEvent.getOrderId(), totalAmount, PaymentStatus.PAYMENT_SUCCESS
+                );
+
             } else {
                 paymentDocument.setTotalAmount(BigDecimal.ZERO);
                 paymentDocument.setStatus(PaymentStatus.PAYMENT_FAILED);
+
+                paymentRepo.save(paymentDocument);
+
                 log.warn("[PAYMENT] Failed for order: {} | reason: {}",
                         inventoryResultEvent.getOrderId(), inventoryResultEvent.getReason());
+
+                return new PaymentResultEvent(
+                        inventoryResultEvent.getOrderId(), BigDecimal.ZERO,
+                        PaymentStatus.PAYMENT_FAILED
+                );
             }
 
-            paymentRepo.save(paymentDocument);
 
         }
         catch (Exception e){
             log.info("Exception occurred in payment service");
+
+            return new PaymentResultEvent(
+                    inventoryResultEvent.getOrderId(), BigDecimal.ZERO,
+                    PaymentStatus.PAYMENT_FAILED
+            );
         }
     }
 }
